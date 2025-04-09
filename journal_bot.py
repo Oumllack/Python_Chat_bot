@@ -515,6 +515,8 @@ async def main():
         logger.info("Démarrage du bot...")
 
         # Démarrage du polling
+        await application.initialize()
+        await application.start()
         await application.run_polling(
             allowed_updates=Update.ALL_TYPES,
             drop_pending_updates=True
@@ -525,13 +527,28 @@ async def main():
         import traceback
         logger.error(traceback.format_exc())
         sys.exit(1)
+    finally:
+        if 'application' in locals():
+            await application.stop()
+            await application.shutdown()
 
-if __name__ == '__main__':
-    logger.info("🚀 Démarrage du programme...")
+def run_bot():
+    """Fonction pour exécuter le bot"""
     try:
-        asyncio.run(main())
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du bot")
     except Exception as e:
         logger.error(f"❌ Erreur fatale: {str(e)}")
         sys.exit(1)
+    finally:
+        try:
+            loop.close()
+        except:
+            pass
+
+if __name__ == '__main__':
+    logger.info("🚀 Démarrage du programme...")
+    run_bot()
