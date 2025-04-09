@@ -479,75 +479,52 @@ async def health_check(request):
 
 async def main():
     """Fonction principale de démarrage du bot"""
-    try:
-        # Vérification des variables d'environnement
-        logger.info("Vérification des variables d'environnement...")
-        if not TOKEN:
-            logger.error("❌ TELEGRAM_TOKEN manquant")
-            return
-        if not GOOGLE_CREDS_JSON:
-            logger.error("❌ GOOGLE_CREDS_JSON manquant")
-            return
-        if not SPREADSHEET_ID:
-            logger.error("❌ GOOGLE_SHEET_ID manquant")
-            return
-        if not GOOGLE_DRIVE_FOLDER_ID:
-            logger.error("❌ GOOGLE_DRIVE_FOLDER_ID manquant")
-            return
+    # Vérification des variables d'environnement
+    logger.info("Vérification des variables d'environnement...")
+    if not TOKEN:
+        logger.error("❌ TELEGRAM_TOKEN manquant")
+        return
+    if not GOOGLE_CREDS_JSON:
+        logger.error("❌ GOOGLE_CREDS_JSON manquant")
+        return
+    if not SPREADSHEET_ID:
+        logger.error("❌ GOOGLE_SHEET_ID manquant")
+        return
+    if not GOOGLE_DRIVE_FOLDER_ID:
+        logger.error("❌ GOOGLE_DRIVE_FOLDER_ID manquant")
+        return
 
-        logger.info("✅ Variables d'environnement OK")
-        logger.info("Initialisation de l'application...")
+    logger.info("✅ Variables d'environnement OK")
+    logger.info("Initialisation de l'application...")
 
-        # Initialisation de l'application
-        application = Application.builder().token(TOKEN).build()
-        
-        # Ajout des gestionnaires
-        logger.info("Configuration des gestionnaires...")
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("new", handle_new))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        application.add_handler(CallbackQueryHandler(handle_date_choice, pattern="^date_"))
-        application.add_handler(CallbackQueryHandler(handle_shift, pattern="^день|ночь$"))
-        application.add_handler(CallbackQueryHandler(handle_product_name, pattern="^name_|custom_name$"))
-        application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-        
-        logger.info("✅ Configuration terminée")
-        logger.info("Démarrage du bot...")
+    # Initialisation de l'application
+    application = Application.builder().token(TOKEN).build()
+    
+    # Ajout des gestionnaires
+    logger.info("Configuration des gestionnaires...")
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("new", handle_new))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(CallbackQueryHandler(handle_date_choice, pattern="^date_"))
+    application.add_handler(CallbackQueryHandler(handle_shift, pattern="^день|ночь$"))
+    application.add_handler(CallbackQueryHandler(handle_product_name, pattern="^name_|custom_name$"))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    
+    logger.info("✅ Configuration terminée")
+    logger.info("Démarrage du bot...")
 
-        # Démarrage du polling
-        await application.initialize()
-        await application.start()
-        await application.run_polling(
-            allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True
-        )
-
-    except Exception as e:
-        logger.error(f"❌ Erreur lors du démarrage du bot: {str(e)}")
-        import traceback
-        logger.error(traceback.format_exc())
-        sys.exit(1)
-    finally:
-        if 'application' in locals():
-            await application.stop()
-            await application.shutdown()
+    # Démarrage du polling
+    await application.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True
+    )
 
 if __name__ == '__main__':
     logger.info("🚀 Démarrage du programme...")
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            loop.close()
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(main())
+        asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du bot")
     except Exception as e:
         logger.error(f"❌ Erreur fatale: {str(e)}")
         sys.exit(1)
-    finally:
-        try:
-            loop.close()
-        except:
-            pass
