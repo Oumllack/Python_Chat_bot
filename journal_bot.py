@@ -5,9 +5,6 @@ import os
 import sys
 import logging
 import datetime
-import openpyxl
-from openpyxl.styles import numbers
-from openpyxl.drawing.image import Image as XLImage
 from io import BytesIO
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
@@ -80,7 +77,6 @@ if not SPREADSHEET_ID or not GOOGLE_DRIVE_FOLDER_ID:
 
 # Локальные настройки
 PHOTOS_DIR = "photos"
-EXCEL_FILE = os.getenv("EXCEL_FILE", "журнал_выпечки.xlsx")
 MAX_IMAGE_WIDTH = 800
 MAX_IMAGE_HEIGHT = 600
 
@@ -120,50 +116,6 @@ def init_google_services():
     except Exception as e:
         logger.error(f"❌ ОШИБКА Google: {e}")
         return None, None
-
-def init_excel_file():
-    """Инициализация файла Excel"""
-    if not os.path.exists(EXCEL_FILE):
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Журнал выпечки"
-        ws.append(COLUMN_HEADERS)
-        
-        # Настройка ширины столбцов
-        column_widths = [20, 15, 10, 20, 30, 20]
-        for i, width in enumerate(column_widths, start=1):
-            ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
-            
-        wb.save(EXCEL_FILE)
-
-def save_to_excel(data, photo_path):
-    """Сохранение данных в Excel"""
-    try:
-        wb = openpyxl.load_workbook(EXCEL_FILE)
-        ws = wb.active
-
-        row_num = ws.max_row + 1
-        
-        # Добавление данных
-        ws.cell(row=row_num, column=1, value=data['Мастер'])
-        ws.cell(row=row_num, column=2, value=data['date_obj']).number_format = 'DD.MM.YYYY'
-        ws.cell(row=row_num, column=3, value=data['смена'])
-        ws.cell(row=row_num, column=4, value=data['наименование'])
-        ws.cell(row=row_num, column=5, value=data.get('комментарий', ''))
-        
-        # Добавление фото
-        img = XLImage(photo_path)
-        img.width = 150
-        img.height = 100
-        img.anchor = f'F{row_num}'
-        ws.add_image(img)
-        
-        ws.row_dimensions[row_num].height = 80
-        wb.save(EXCEL_FILE)
-        return True
-    except Exception as e:
-        logger.error(f"❌ ОШИБКА Excel: {e}")
-        return False
 
 async def upload_to_drive(file_path, drive_service):
     """Загрузка файла на Google Drive"""
@@ -427,7 +379,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             img.save(photo_path, "JPEG", quality=85)
 
         # Сохранение
-        excel_ok = save_to_excel(user_data, photo_path)
         sheets_ok = False
         image_url = None
         
@@ -438,7 +389,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 sheets_ok = await save_to_sheets(sheets_service, user_data, image_url)
 
         # Формирование ответа
-        if excel_ok and sheets_ok:
+        if sheets_ok:
             msg = (
                 "✅ Данные сохранены!\n"
                 f"📅 Дата: {user_data['дата']}\n"
@@ -448,8 +399,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"💬 Комментарий: {user_data.get('комментарий', 'нет')}\n\n"
                 "Добавить новую запись?"
             )
-        elif excel_ok:
-            msg = "⚠️ Данные сохранены в Excel, но ошибка Google Sheets\nДобавить запись?"
         else:
             msg = "❌ Ошибка сохранения\nПопробовать снова?"
 
