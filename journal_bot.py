@@ -518,30 +518,25 @@ async def main():
         await application.initialize()
         await application.start()
         
-        # Création d'une tâche pour le polling
-        polling_task = asyncio.create_task(
-            application.run_polling(
-                allowed_updates=Update.ALL_TYPES,
-                drop_pending_updates=True,
-                close_loop=False
-            )
+        # Configuration du polling
+        await application.updater.start_polling(
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True
         )
         
-        # Attente de la tâche avec timeout
-        try:
-            await asyncio.wait_for(polling_task, timeout=None)
-        except asyncio.TimeoutError:
-            logger.info("Timeout du polling")
-        except asyncio.CancelledError:
-            logger.info("Polling annulé")
-        except Exception as e:
-            logger.error(f"❌ Erreur lors du polling: {str(e)}")
+        # Boucle principale
+        while True:
+            try:
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                break
             
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
     finally:
         # Arrêt propre de l'application
         try:
+            await application.updater.stop()
             await application.stop()
             await application.shutdown()
         except Exception as e:
@@ -551,8 +546,7 @@ def run_bot():
     """Fonction pour exécuter le bot"""
     try:
         # Création d'une nouvelle boucle d'événements
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        loop = asyncio.get_event_loop()
         
         try:
             # Exécution de la fonction principale
