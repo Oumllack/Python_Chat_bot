@@ -479,8 +479,6 @@ async def health_check(request):
 
 async def main():
     """Fonction principale de démarrage du bot"""
-    logger.info("🚀 Démarrage de la fonction main()")
-    
     # Vérification des variables d'environnement
     logger.info("Vérification des variables d'environnement...")
     if not TOKEN:
@@ -499,26 +497,30 @@ async def main():
     logger.info("✅ Variables d'environnement OK")
     logger.info("Initialisation de l'application...")
 
+    # Initialisation de l'application
+    application = Application.builder().token(TOKEN).build()
+    
+    # Ajout des gestionnaires
+    logger.info("Configuration des gestionnaires...")
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("new", handle_new))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(CallbackQueryHandler(handle_date_choice, pattern="^date_"))
+    application.add_handler(CallbackQueryHandler(handle_shift, pattern="^день|ночь$"))
+    application.add_handler(CallbackQueryHandler(handle_product_name, pattern="^name_|custom_name$"))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    
+    logger.info("✅ Configuration terminée")
+    logger.info("Démarrage du bot...")
+
     try:
-        # Initialisation de l'application
-        application = Application.builder().token(TOKEN).build()
-        logger.info("✅ Application initialisée")
-        
-        # Ajout des gestionnaires
-        logger.info("Configuration des gestionnaires...")
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("new", handle_new))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        application.add_handler(CallbackQueryHandler(handle_date_choice, pattern="^date_"))
-        application.add_handler(CallbackQueryHandler(handle_shift, pattern="^день|ночь$"))
-        application.add_handler(CallbackQueryHandler(handle_product_name, pattern="^name_|custom_name$"))
-        application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-        logger.info("✅ Gestionnaires configurés")
+        # Initialisation explicite
+        await application.initialize()
+        await application.start()
         
         # Suppression du webhook existant
-        logger.info("Suppression du webhook...")
         await application.bot.delete_webhook()
-        logger.info("✅ Webhook supprimé")
+        logger.info("✅ Webhook supprimé avec succès")
         
         # Démarrage du polling
         logger.info("Démarrage du polling...")
@@ -526,26 +528,40 @@ async def main():
             allowed_updates=Update.ALL_TYPES,
             drop_pending_updates=True
         )
-        logger.info("✅ Polling démarré")
-        
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
-        raise
     finally:
-        logger.info("Fin de la fonction main()")
+        # Arrêt propre de l'application
+        try:
+            logger.info("Arrêt de l'application...")
+            await application.stop()
+            await application.shutdown()
+            logger.info("✅ Application arrêtée avec succès")
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de l'arrêt du bot: {str(e)}")
 
 def run_bot():
     """Fonction pour exécuter le bot"""
-    logger.info("🚀 Démarrage de la fonction run_bot()")
     try:
-        asyncio.run(main())
+        # Création et configuration de la boucle d'événements
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        # Exécution de la fonction principale
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du bot")
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
         sys.exit(1)
     finally:
-        logger.info("Fin de la fonction run_bot()")
+        # Nettoyage de la boucle d'événements
+        try:
+            loop.close()
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de la fermeture de la boucle: {str(e)}")
 
 if __name__ == '__main__':
     logger.info("🚀 Démarrage du programme...")
