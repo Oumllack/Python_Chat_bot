@@ -1,0 +1,17 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python3 journal_bot.py"
+restartPolicyType = "on_failure"
+
+[env]
+PYTHON_VERSION = "3.11.0"
+TELEGRAM_TOKEN = ""
+GOOGLE_SHEET_NAME = "TKonditerChatBot"
+PHOTOS_DIR = "photos"
+EXCEL_FILE = "журнал_выпечки.xlsx"
+GOOGLE_SHEET_ID = ""
+GOOGLE_DRIVE_FOLDER_ID = ""
+PORT = "8080"
+GOOGLE_CREDS_JSON = "" 
