@@ -514,54 +514,61 @@ async def main():
     logger.info("Démarrage du bot...")
 
     try:
-        # Initialisation explicite
+        # Démarrage du polling avec gestion des erreurs
         await application.initialize()
         await application.start()
         
-        # Suppression du webhook existant
-        await application.bot.delete_webhook()
-        logger.info("✅ Webhook supprimé avec succès")
-        
-        # Démarrage du polling
-        logger.info("Démarrage du polling...")
-        await application.run_polling(
+        # Configuration du polling
+        await application.updater.start_polling(
             allowed_updates=Update.ALL_TYPES,
             drop_pending_updates=True
         )
+        
+        # Boucle principale
+        while True:
+            try:
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                break
+            
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
     finally:
         # Arrêt propre de l'application
         try:
-            logger.info("Arrêt de l'application...")
+            await application.updater.stop()
             await application.stop()
             await application.shutdown()
-            logger.info("✅ Application arrêtée avec succès")
         except Exception as e:
             logger.error(f"❌ Erreur lors de l'arrêt du bot: {str(e)}")
 
 def run_bot():
     """Fonction pour exécuter le bot"""
     try:
-        # Création et configuration de la boucle d'événements
+        # Création d'une nouvelle boucle d'événements
         loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
         
-        # Exécution de la fonction principale
-        loop.run_until_complete(main())
-    except KeyboardInterrupt:
-        logger.info("Arrêt manuel du bot")
+        try:
+            # Exécution de la fonction principale
+            loop.run_until_complete(main())
+        except KeyboardInterrupt:
+            logger.info("Arrêt manuel du bot")
+        except asyncio.CancelledError:
+            logger.info("Tâche annulée normalement")
+        except Exception as e:
+            logger.error(f"❌ Erreur fatale: {str(e)}")
+            sys.exit(1)
+        finally:
+            # Nettoyage de la boucle d'événements
+            try:
+                pending = asyncio.all_tasks(loop)
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                loop.run_until_complete(loop.shutdown_asyncgens())
+            finally:
+                loop.close()
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
         sys.exit(1)
-    finally:
-        # Nettoyage de la boucle d'événements
-        try:
-            loop.close()
-        except Exception as e:
-            logger.error(f"❌ Erreur lors de la fermeture de la boucle: {str(e)}")
 
 if __name__ == '__main__':
     logger.info("🚀 Démarrage du programme...")
