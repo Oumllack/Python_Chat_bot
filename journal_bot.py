@@ -515,34 +515,18 @@ async def main():
 
     try:
         # Démarrage du polling avec gestion des erreurs
-        logger.info("Initialisation de l'application...")
-        await application.initialize()
-        logger.info("Démarrage de l'application...")
-        await application.start()
-        
-        # Configuration du polling
         logger.info("Démarrage du polling...")
-        await application.updater.start_polling(
+        await application.run_polling(
             allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True
+            drop_pending_updates=True,
+            close_loop=False
         )
-        logger.info("✅ Polling démarré avec succès")
-        
-        # Boucle principale
-        while True:
-            try:
-                await asyncio.sleep(1)
-            except asyncio.CancelledError:
-                logger.info("Arrêt de la boucle principale")
-                break
-            
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
     finally:
         # Arrêt propre de l'application
         try:
             logger.info("Arrêt de l'application...")
-            await application.updater.stop()
             await application.stop()
             await application.shutdown()
             logger.info("✅ Application arrêtée avec succès")
