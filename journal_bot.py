@@ -424,7 +424,17 @@ async def handle_new(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Новая запись"""
     query = update.callback_query
     await query.answer()
-    await start(query, context)
+    
+    # Réinitialisation des données utilisateur
+    context.user_data.clear()
+    context.user_data['этап'] = 1
+    
+    # Envoi du message de démarrage
+    await context.bot.send_message(
+        chat_id=query.message.chat_id,
+        text="👨‍🍳 Введите ФИО Мастера:",
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 async def health_check(request):
     """Endpoint de vérification de santé pour Railway"""
