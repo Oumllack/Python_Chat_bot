@@ -538,11 +538,7 @@ def run_bot():
     """Fonction pour exécuter le bot"""
     logger.info("🚀 Démarrage de la fonction run_bot()")
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        loop.run_until_complete(main())
+        asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du bot")
     except Exception as e:
