@@ -514,6 +514,10 @@ async def main():
     logger.info("Démarrage du bot...")
 
     try:
+        # Initialisation explicite
+        await application.initialize()
+        await application.start()
+        
         # Démarrage du polling
         await application.run_polling(
             allowed_updates=Update.ALL_TYPES,
@@ -526,6 +530,7 @@ async def main():
         try:
             logger.info("Arrêt de l'application...")
             await application.stop()
+            await application.shutdown()
             logger.info("✅ Application arrêtée avec succès")
         except Exception as e:
             logger.error(f"❌ Erreur lors de l'arrêt du bot: {str(e)}")
@@ -533,12 +538,25 @@ async def main():
 def run_bot():
     """Fonction pour exécuter le bot"""
     try:
-        asyncio.run(main())
+        # Création et configuration de la boucle d'événements
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        # Exécution de la fonction principale
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du bot")
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
         sys.exit(1)
+    finally:
+        # Nettoyage de la boucle d'événements
+        try:
+            loop.close()
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de la fermeture de la boucle: {str(e)}")
 
 if __name__ == '__main__':
     logger.info("🚀 Démarrage du programme...")
