@@ -514,7 +514,12 @@ async def main():
     logger.info("Démarrage du bot...")
 
     try:
+        # Suppression du webhook existant
+        await application.bot.delete_webhook()
+        logger.info("✅ Webhook supprimé avec succès")
+        
         # Démarrage du polling
+        logger.info("Démarrage du polling...")
         await application.run_polling(
             allowed_updates=Update.ALL_TYPES,
             drop_pending_updates=True
