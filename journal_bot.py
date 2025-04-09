@@ -538,25 +538,14 @@ def run_bot():
     """Fonction pour exécuter le bot"""
     logger.info("🚀 Démarrage de la fonction run_bot()")
     try:
-        # Création et configuration de la boucle d'événements
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        
-        # Exécution de la fonction principale
-        loop.run_until_complete(main())
+        asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du bot")
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
         sys.exit(1)
     finally:
-        # Nettoyage de la boucle d'événements
-        try:
-            loop.close()
-        except Exception as e:
-            logger.error(f"❌ Erreur lors de la fermeture de la boucle: {str(e)}")
+        logger.info("Fin de la fonction run_bot()")
 
 if __name__ == '__main__':
     logger.info("🚀 Démarrage du programme...")
