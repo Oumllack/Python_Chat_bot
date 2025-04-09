@@ -471,6 +471,7 @@ async def main():
     application.add_handler(CallbackQueryHandler(handle_date_choice, pattern="^date_"))
     application.add_handler(CallbackQueryHandler(handle_shift, pattern="^день|ночь$"))
     application.add_handler(CallbackQueryHandler(handle_product_name, pattern="^name_|custom_name$"))
+    application.add_handler(CallbackQueryHandler(handle_new, pattern="^новая$"))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     
     logger.info("✅ Configuration terminée")
