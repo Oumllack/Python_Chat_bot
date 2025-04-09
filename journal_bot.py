@@ -402,6 +402,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             msg = "❌ Ошибка сохранения\nПопробовать снова?"
 
+        # Réinitialisation de l'état de l'utilisateur
+        user_data.clear()
+        user_data['этап'] = 1
+
         await update.message.reply_text(
             msg,
             reply_markup=InlineKeyboardMarkup([
