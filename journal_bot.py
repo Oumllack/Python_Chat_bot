@@ -205,10 +205,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_data['Мастер'] = text
         user_data['этап'] = 2
         
-        # Nouvelle interface pour la date avec boutons
         keyboard = [
             [InlineKeyboardButton("Сегодня", callback_data='date_today')],
-            [InlineKeyboardButton("Другая дата", callback_data='date_custom')]
+            [InlineKeyboardButton("Другая дата", callback_data='date_custom')],
+            [InlineKeyboardButton("◀️ Назад", callback_data='back_to_master')]
         ]
         
         await update.message.reply_text(
@@ -217,7 +217,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     
     elif user_data['этап'] == 2:
-        # Traitement si l'utilisateur entre une date manuellement
         if 'custom_date' in user_data and user_data['custom_date']:
             try:
                 date_obj = datetime.datetime.strptime(text, "%d.%m.%Y")
@@ -226,12 +225,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 del user_data['custom_date']
                 user_data['этап'] = 3
                 
+                keyboard = [
+                    [InlineKeyboardButton("День", callback_data='день'),
+                     InlineKeyboardButton("Ночь", callback_data='ночь')],
+                    [InlineKeyboardButton("◀️ Назад", callback_data='back_to_date')]
+                ]
+                
                 await update.message.reply_text(
                     "🌞🌜 Выберите смену:",
-                    reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("День", callback_data='день'),
-                         InlineKeyboardButton("Ночь", callback_data='ночь')]
-                    ])
+                    reply_markup=InlineKeyboardMarkup(keyboard)
                 )
             except ValueError:
                 await update.message.reply_text("❌ Неверный формат. Используйте ДД.ММ.ГГГГ")
@@ -242,12 +244,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_data['наименование'] = text
             del user_data['custom_name']
             user_data['этап'] = 5
-            await update.message.reply_text("💬 Введите комментарий:")
+            
+            keyboard = [
+                [InlineKeyboardButton("◀️ Назад", callback_data='back_to_product')]
+            ]
+            
+            await update.message.reply_text(
+                "💬 Введите комментарий:",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
     
     elif user_data['этап'] == 5:
         user_data['комментарий'] = text
         user_data['этап'] = 6
-        await update.message.reply_text("📸 Отправьте фото готовой продукции:")
+        
+        keyboard = [
+            [InlineKeyboardButton("◀️ Назад", callback_data='back_to_comment')]
+        ]
+        
+        await update.message.reply_text(
+            "📸 Отправьте фото готовой продукции:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 async def handle_date_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора даты"""
@@ -262,53 +280,29 @@ async def handle_date_choice(update: Update, context: ContextTypes.DEFAULT_TYPE)
         user_data['date_obj'] = today
         user_data['этап'] = 3
         
+        keyboard = [
+            [InlineKeyboardButton("День", callback_data='день'),
+             InlineKeyboardButton("Ночь", callback_data='ночь')],
+            [InlineKeyboardButton("◀️ Назад", callback_data='back_to_date')]
+        ]
+        
         await query.edit_message_text(text=f"Дата: {user_data['дата']}")
         await context.bot.send_message(
             chat_id=query.message.chat_id,
             text="🌞🌜 Выберите смену:",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("День", callback_data='день'),
-                 InlineKeyboardButton("Ночь", callback_data='ночь')]
-            ])
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
     elif query.data == 'date_custom':
         user_data['custom_date'] = True
-        await query.edit_message_text(text="✏️ Введите дату в формате ДД.ММ.ГГГГ:")
-    elif user_data['этап'] == 2:
-        if text.lower() == 'сегодня':
-            today = datetime.datetime.now()
-            user_data['дата'] = today.strftime("%d.%m.%Y")
-            user_data['date_obj'] = today
-        else:
-            try:
-                date_obj = datetime.datetime.strptime(text, "%d.%m.%Y")
-                user_data['дата'] = text
-                user_data['date_obj'] = date_obj
-            except ValueError:
-                await update.message.reply_text("❌ Неверный формат. Используйте ДД.ММ.ГГГГ")
-                return
-
-        user_data['этап'] = 3
-        await update.message.reply_text(
-            "🌞🌜 Выберите смену:",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("День", callback_data='день'),
-                 InlineKeyboardButton("Ночь", callback_data='ночь')]
-            ])
+        
+        keyboard = [
+            [InlineKeyboardButton("◀️ Назад", callback_data='back_to_master')]
+        ]
+        
+        await query.edit_message_text(
+            text="✏️ Введите дату в формате ДД.ММ.ГГГГ:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
-    
-    elif user_data['этап'] == 4:
-        # Если пользователь вводит собственное наименование
-        if 'custom_name' in user_data and user_data['custom_name']:
-            user_data['наименование'] = text
-            del user_data['custom_name']
-            user_data['этап'] = 5
-            await update.message.reply_text("💬 Введите комментарий:")
-    
-    elif user_data['этап'] == 5:
-        user_data['комментарий'] = text
-        user_data['этап'] = 6
-        await update.message.reply_text("📸 Отправьте фото готовой продукции:")
 
 async def handle_shift(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора смены"""
@@ -321,13 +315,12 @@ async def handle_shift(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.edit_message_text(text=f"Смена: {user_data['смена']}")
     
-    # Создание клавиатуры с одним продуктом на строку
     keyboard = []
     for idx, name in enumerate(PRODUCT_NAMES):
         keyboard.append([InlineKeyboardButton(name, callback_data=f"name_{idx}")])
     
-    # Добавление кнопки для ввода своего наименования
     keyboard.append([InlineKeyboardButton("✏️ Ввести свое наименование", callback_data="custom_name")])
+    keyboard.append([InlineKeyboardButton("◀️ Назад", callback_data='back_to_shift')])
     
     await context.bot.send_message(
         chat_id=query.message.chat_id,
@@ -344,18 +337,89 @@ async def handle_product_name(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     if query.data == "custom_name":
         user_data['custom_name'] = True
-        await query.edit_message_text(text="✏️ Введите свое наименование:")
+        
+        keyboard = [
+            [InlineKeyboardButton("◀️ Назад", callback_data='back_to_product')]
+        ]
+        
+        await query.edit_message_text(
+            text="✏️ Введите свое наименование:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
         return
     
     idx = int(query.data.split("_")[1])
     user_data['наименование'] = PRODUCT_NAMES[idx]
     user_data['этап'] = 5
     
+    keyboard = [
+        [InlineKeyboardButton("◀️ Назад", callback_data='back_to_product')]
+    ]
+    
     await query.edit_message_text(text=f"Наименование: {user_data['наименование']}")
     await context.bot.send_message(
         chat_id=query.message.chat_id,
-        text="💬 Введите комментарий:"
+        text="💬 Введите комментарий:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
+
+async def handle_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка кнопки назад"""
+    query = update.callback_query
+    await query.answer()
+
+    user_data = context.user_data
+    back_to = query.data
+
+    if back_to == 'back_to_master':
+        user_data['этап'] = 1
+        await query.edit_message_text(text="👨‍🍳 Введите ФИО Мастера:")
+    
+    elif back_to == 'back_to_date':
+        user_data['этап'] = 2
+        keyboard = [
+            [InlineKeyboardButton("Сегодня", callback_data='date_today')],
+            [InlineKeyboardButton("Другая дата", callback_data='date_custom')],
+            [InlineKeyboardButton("◀️ Назад", callback_data='back_to_master')]
+        ]
+        await query.edit_message_text(
+            text="📅 Выберите дату:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    
+    elif back_to == 'back_to_shift':
+        user_data['этап'] = 3
+        keyboard = [
+            [InlineKeyboardButton("День", callback_data='день'),
+             InlineKeyboardButton("Ночь", callback_data='ночь')],
+            [InlineKeyboardButton("◀️ Назад", callback_data='back_to_date')]
+        ]
+        await query.edit_message_text(
+            text="🌞🌜 Выберите смену:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    
+    elif back_to == 'back_to_product':
+        user_data['этап'] = 4
+        keyboard = []
+        for idx, name in enumerate(PRODUCT_NAMES):
+            keyboard.append([InlineKeyboardButton(name, callback_data=f"name_{idx}")])
+        keyboard.append([InlineKeyboardButton("✏️ Ввести свое наименование", callback_data="custom_name")])
+        keyboard.append([InlineKeyboardButton("◀️ Назад", callback_data='back_to_shift')])
+        await query.edit_message_text(
+            text="🏷 Выберите наименование продукта:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    
+    elif back_to == 'back_to_comment':
+        user_data['этап'] = 5
+        keyboard = [
+            [InlineKeyboardButton("◀️ Назад", callback_data='back_to_product')]
+        ]
+        await query.edit_message_text(
+            text="💬 Введите комментарий:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка фото"""
@@ -473,6 +537,7 @@ async def main():
     application.add_handler(CallbackQueryHandler(handle_product_name, pattern="^name_|custom_name$"))
     application.add_handler(CallbackQueryHandler(handle_new, pattern="^новая$"))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    application.add_handler(CallbackQueryHandler(handle_back, pattern="^back_"))
     
     logger.info("✅ Configuration terminée")
     logger.info("Démarrage du bot...")
