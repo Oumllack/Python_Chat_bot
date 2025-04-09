@@ -514,13 +514,8 @@ async def main():
     logger.info("Démarrage du bot...")
 
     try:
-        # Démarrage du polling avec gestion des erreurs
-        logger.info("Démarrage du polling...")
-        await application.run_polling(
-            allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True,
-            close_loop=False
-        )
+        # Démarrage du polling
+        await application.run_polling()
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
     finally:
@@ -536,27 +531,9 @@ async def main():
 def run_bot():
     """Fonction pour exécuter le bot"""
     try:
-        # Création d'une nouvelle boucle d'événements
-        loop = asyncio.get_event_loop()
-        
-        try:
-            # Exécution de la fonction principale
-            loop.run_until_complete(main())
-        except KeyboardInterrupt:
-            logger.info("Arrêt manuel du bot")
-        except asyncio.CancelledError:
-            logger.info("Tâche annulée normalement")
-        except Exception as e:
-            logger.error(f"❌ Erreur fatale: {str(e)}")
-            sys.exit(1)
-        finally:
-            # Nettoyage de la boucle d'événements
-            try:
-                pending = asyncio.all_tasks(loop)
-                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-                loop.run_until_complete(loop.shutdown_asyncgens())
-            finally:
-                loop.close()
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Arrêt manuel du bot")
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
         sys.exit(1)
