@@ -514,25 +514,38 @@ async def main():
         logger.info("✅ Configuration terminée")
         logger.info("Démarrage du bot...")
 
-        # Démarrage du polling
-        await application.run_polling(
-            allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True
-        )
+        # Démarrage du polling avec gestion des erreurs
+        try:
+            await application.initialize()
+            await application.start()
+            await application.run_polling(
+                allowed_updates=Update.ALL_TYPES,
+                drop_pending_updates=True
+            )
+        except Exception as e:
+            logger.error(f"❌ Erreur lors du polling: {str(e)}")
+            raise
+        finally:
+            await application.stop()
+            await application.shutdown()
 
     except Exception as e:
         logger.error(f"❌ Erreur lors du démarrage du bot: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-    finally:
-        logger.info("Arrêt du bot...")
+        sys.exit(1)
 
 if __name__ == '__main__':
     logger.info("🚀 Démarrage du programme...")
     try:
-        asyncio.run(main())
+        # Création d'une nouvelle boucle d'événements
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du bot")
     except Exception as e:
         logger.error(f"❌ Erreur fatale: {str(e)}")
         sys.exit(1)
+    finally:
+        loop.close()
