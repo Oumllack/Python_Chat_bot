@@ -42,6 +42,7 @@ PORT = int(os.getenv('PORT', 8080))
 
 # Получение переменных окружения
 TOKEN = os.getenv("TELEGRAM_TOKEN")
+logger.info(f"TELEGRAM_TOKEN: {'présent' if TOKEN else 'absent'}")
 if not TOKEN:
     logger.error("❌ ОШИБКА: Токен Telegram не найден")
     logger.error("Проверьте переменные окружения в Railway")
@@ -52,9 +53,12 @@ GOOGLE_SHEETS_SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 GOOGLE_DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive']
 SPREADSHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 GOOGLE_DRIVE_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
+logger.info(f"GOOGLE_SHEET_ID: {'présent' if SPREADSHEET_ID else 'absent'}")
+logger.info(f"GOOGLE_DRIVE_FOLDER_ID: {'présent' if GOOGLE_DRIVE_FOLDER_ID else 'absent'}")
 
 # Получение учетных данных Google из переменной окружения
 GOOGLE_CREDS_JSON = os.getenv("GOOGLE_CREDS_JSON")
+logger.info(f"GOOGLE_CREDS_JSON: {'présent' if GOOGLE_CREDS_JSON else 'absent'}")
 if not GOOGLE_CREDS_JSON:
     logger.error("❌ ОШИБКА: Учетные данные Google не найдены")
     logger.error("Проверьте переменные окружения в Railway")
