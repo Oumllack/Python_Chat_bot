@@ -517,13 +517,26 @@ async def main():
         # Démarrage du polling avec gestion des erreurs
         await application.initialize()
         await application.start()
-        await application.run_polling(
-            allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True,
-            close_loop=False  # Empêche la fermeture automatique de la boucle
+        
+        # Création d'une tâche pour le polling
+        polling_task = asyncio.create_task(
+            application.run_polling(
+                allowed_updates=Update.ALL_TYPES,
+                drop_pending_updates=True,
+                close_loop=False
+            )
         )
-    except asyncio.CancelledError:
-        logger.info("Arrêt normal du bot")
+        
+        # Attente de la tâche avec timeout
+        try:
+            await asyncio.wait_for(polling_task, timeout=None)
+        except asyncio.TimeoutError:
+            logger.info("Timeout du polling")
+        except asyncio.CancelledError:
+            logger.info("Polling annulé")
+        except Exception as e:
+            logger.error(f"❌ Erreur lors du polling: {str(e)}")
+            
     except Exception as e:
         logger.error(f"❌ Erreur lors de l'exécution du bot: {str(e)}")
     finally:
